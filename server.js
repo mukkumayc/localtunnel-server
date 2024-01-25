@@ -11,6 +11,10 @@ import ClientManager from './lib/ClientManager.js';
 
 const debug = Debug('localtunnel:server');
 
+const getEndpointIp = (request) => {
+    return request.headers['x-forwarded-for'] || request.ip
+}
+
 export default function (opt) {
     opt = opt || {};
 
@@ -59,8 +63,7 @@ export default function (opt) {
     // root endpoint
     app.use(async (ctx, next) => {
         const path = ctx.request.path;
-        const clientIp =
-            ctx.request.headers['x-forwarded-for'] || ctx.request.ip;
+        const endpointIp = getEndpointIp(ctx.request);
 
         // skip anything not on the root path
         if (path !== '/') {
@@ -76,7 +79,7 @@ export default function (opt) {
                 separator: '-',
                 capitalize: false,
             });
-            // const reqId = `${randomId}-${clientIp.replace(/\./g, '-')}`;
+            // const reqId = `${randomId}-${endpointIp.replace(/\./g, '-')}`;
 
             const reqId = `${randomId}`;
 
@@ -88,7 +91,7 @@ export default function (opt) {
             info.url = url;
 
             ctx.set('x-localtunnel-subdomain', info.id);
-            ctx.set('x-localtunnel-endpoint', clientIp);
+            ctx.set('x-localtunnel-endpoint', endpointIp);
 
             ctx.body = info;
             return;
@@ -102,8 +105,7 @@ export default function (opt) {
     // This is a backwards compat feature
     app.use(async (ctx, next) => {
         const parts = ctx.request.path.split('/');
-        const clientIp =
-            ctx.request.headers['x-forwarded-for'] || ctx.request.ip;
+        const endpointIp = getEndpointIp(ctx.request);
 
         // any request with several layers of paths is not allowed
         // rejects /foo/bar
@@ -136,7 +138,7 @@ export default function (opt) {
         info.url = url;
 
         ctx.set('x-localtunnel-subdomain', info.id);
-        ctx.set('x-localtunnel-endpoint', clientIp);
+        ctx.set('x-localtunnel-endpoint', endpointIp);
 
         ctx.body = info;
         return;
