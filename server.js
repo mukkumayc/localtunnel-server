@@ -11,7 +11,9 @@ import ClientManager from './lib/ClientManager.js';
 
 const debug = Debug('localtunnel:server');
 
-const getEndpointIp = (request) => {
+const getEndpointIps = (request) => {
+    // request.headers['x-forwarded-for'] could be a comma separated list of IPs (if client is behind proxies)
+    // TODO: change this to use request-ip package or something better to prevent x-forwarded-for spoofing?
     return request.headers['x-forwarded-for'] || request.ip
 }
 
@@ -63,7 +65,7 @@ export default function (opt) {
     // root endpoint
     app.use(async (ctx, next) => {
         const path = ctx.request.path;
-        const endpointIp = getEndpointIp(ctx.request);
+        const endpointIp = getEndpointIps(ctx.request);
 
         // skip anything not on the root path
         if (path !== '/') {
@@ -105,7 +107,7 @@ export default function (opt) {
     // This is a backwards compat feature
     app.use(async (ctx, next) => {
         const parts = ctx.request.path.split('/');
-        const endpointIp = getEndpointIp(ctx.request);
+        const endpointIp = getEndpointIps(ctx.request);
 
         // any request with several layers of paths is not allowed
         // rejects /foo/bar
