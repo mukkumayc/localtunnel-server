@@ -64,6 +64,13 @@ export default function (opt) {
 
     // root endpoint
     app.use(async (ctx, next) => {
+        if (opt.auth && ctx.get('Authorization') !== `Bearer ${opt.auth}`) {
+            ctx.status = 401;
+            ctx.body = {
+                message: 'unauthorized',
+            };
+        }
+
         const path = ctx.request.path;
         const endpointIp = getEndpointIps(ctx.request);
 
